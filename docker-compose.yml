@@ -16,11 +16,11 @@ services:
       - mqtt
     environment:
       - CLOUD_ENDPOINT=${CLOUD_ENDPOINT:-http://host.docker.internal:7071/api/iot-data}
-      - BATCH_SIZE=${BATCH_SIZE:-10}
-      - SEND_INTERVAL=${SEND_INTERVAL:-30}
+      - BATCH_SIZE=${BATCH_SIZE:-100}
+      - SEND_INTERVAL=${SEND_INTERVAL:-5}
 
   device:
     build: ./device-simulator
-    depends_on:
-      - mqtt
+    environment:
+      - MQTT_BROKER=mqtt
 

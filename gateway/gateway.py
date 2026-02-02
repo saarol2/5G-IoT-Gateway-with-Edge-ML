@@ -8,10 +8,10 @@ from collections import deque
 
 BROKER = "mqtt"
 TOPIC = "sensors/temperature"
-MAX_READINGS = 200
+MAX_READINGS = 500
 CLOUD_ENDPOINT = os.getenv("CLOUD_ENDPOINT", "http://localhost:7071/api/iot-data")
-BATCH_SIZE = int(os.getenv("BATCH_SIZE", "10"))
-SEND_INTERVAL = int(os.getenv("SEND_INTERVAL", "30"))  # seconds
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
+SEND_INTERVAL = int(os.getenv("SEND_INTERVAL", "5"))  # seconds
 
 readings = deque(maxlen=MAX_READINGS)
 send_lock = threading.Lock()
@@ -27,8 +27,9 @@ def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
         print(f"Received: {data}")
-        readings.append(data)
-        print(f"Stored in memory. Total readings: {len(readings)}")
+        with send_lock:
+            readings.append(data)
+            print(f"Stored in memory. Total readings: {len(readings)}")
     except Exception as e:
         print(f"Error processing message: {e}")
 
@@ -36,17 +37,42 @@ def on_disconnect(client, userdata, rc, properties=None):
     print(f"Gateway disconnected with code {rc}")
 
 def send_to_cloud():
-    """Send batched data to cloud endpoint via REST API"""
+    """Send batched data to cloud endpoint via REST API with adaptive sending"""
+    last_send_time = time.time()
+    
     while True:
-        time.sleep(SEND_INTERVAL)
+        current_time = time.time()
+        time_since_last_send = current_time - last_send_time
+        
+        with send_lock:
+            queue_size = len(readings)
+            buffer_usage = queue_size / MAX_READINGS
+        
+        # Adaptive sending logic:
+        # 1. Send immediately if batch is full
+        # 2. Send if buffer is >80% full (prevent data loss)
+        # 3. Send if SEND_INTERVAL has passed and data exists
+        should_send = (
+            queue_size >= BATCH_SIZE or  # Batch ready
+            buffer_usage > 0.8 or  # Buffer almost full
+            (queue_size > 0 and time_since_last_send >= SEND_INTERVAL)  # Time elapsed
+        )
+        
+        if not should_send:
+            time.sleep(0.5)  # Check more frequently
+            continue
         
         with send_lock:
             if len(readings) == 0:
-                print("No data to send")
+                time.sleep(SEND_INTERVAL)
                 continue
-            
-            # Get batch of readings
             batch = list(readings)[:BATCH_SIZE]
+        
+        # Warning if buffer is getting full
+        if buffer_usage > 0.8:
+            print(f" WARNING: Buffer {buffer_usage*100:.0f}% full ({queue_size}/{MAX_READINGS})")
+        
+        print(f"Attempting to send {len(batch)} readings to cloud...")
             
         try:
             payload = {
@@ -64,10 +90,10 @@ def send_to_cloud():
             
             if response.status_code == 200:
                 print(f"Successfully sent {len(batch)} readings to cloud")
-                # Remove sent readings from buffer
                 with send_lock:
                     for _ in range(min(len(batch), len(readings))):
                         readings.popleft()
+                last_send_time = time.time()
             else:
                 print(f"Failed to send data. Status: {response.status_code}, Response: {response.text}")
                 

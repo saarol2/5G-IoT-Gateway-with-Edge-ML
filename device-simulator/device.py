@@ -1,7 +1,10 @@
-import time, json, random
+import os, time, json, random
 import paho.mqtt.client as mqtt
 
-BROKER, TOPIC = "mqtt", "sensors/temperature"
+BROKER = os.getenv("MQTT_BROKER", "mqtt")
+TOPIC = "sensors/temperature"
+DEVICE_ID = os.getenv("DEVICE_ID", os.getenv("HOSTNAME", "sensor_unknown"))
+
 connected = False
 
 def on_connect(client, userdata, flags, rc, properties=None):
@@ -18,7 +21,13 @@ while not connected:
     time.sleep(0.1)
 
 while True:
-    data = {"device_id": "sensor_1", "temperature": round(random.uniform(60, 90), 2), "timestamp": time.time()}
+    data = {
+        "device_id": DEVICE_ID,
+        "temperature": round(random.uniform(60, 90), 2),
+        "timestamp": time.time()
+    }
+
     client.publish(TOPIC, json.dumps(data))
-    print(f"Sent: {data['temperature']}°C")
-    time.sleep(5)
+    print(f"{DEVICE_ID} sent {data['temperature']}°C")
+
+    time.sleep(random.uniform(1,5))
