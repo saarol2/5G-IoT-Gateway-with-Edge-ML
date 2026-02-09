@@ -7,7 +7,8 @@ import os
 from collections import deque
 
 BROKER = "mqtt"
-TOPIC = "sensors/temperature"
+SHARED_TOPIC = "$share/gateways/sensors/temperature"
+GATEWAY_ID = os.getenv("HOSTNAME", f"gateway_{os.getpid()}")
 MAX_READINGS = 500
 CLOUD_ENDPOINT = os.getenv("CLOUD_ENDPOINT", "http://localhost:7071/api/iot-data")
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
@@ -18,23 +19,23 @@ send_lock = threading.Lock()
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        client.subscribe(TOPIC)
-        print(f"Gateway connected and subscribed to {TOPIC}")
+        client.subscribe(SHARED_TOPIC)
+        print(f"Gateway {GATEWAY_ID} connected and subscribed to {SHARED_TOPIC}")
     else:
-        print(f"Gateway connection failed with code {rc}")
+        print(f"Gateway {GATEWAY_ID} connection failed with code {rc}")
 
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
-        print(f"Received: {data}")
+        #print(f"[{GATEWAY_ID}] Received: {data}")
         with send_lock:
             readings.append(data)
-            print(f"Stored in memory. Total readings: {len(readings)}")
+            #print(f"[{GATEWAY_ID}] Stored in memory. Total readings: {len(readings)}")
     except Exception as e:
-        print(f"Error processing message: {e}")
+        print(f"[{GATEWAY_ID}] Error processing message: {e}")
 
 def on_disconnect(client, userdata, rc, properties=None):
-    print(f"Gateway disconnected with code {rc}")
+    print(f"[{GATEWAY_ID}] Disconnected with code {rc}")
 
 def send_to_cloud():
     """Send batched data to cloud endpoint via REST API with adaptive sending"""
@@ -70,13 +71,13 @@ def send_to_cloud():
         
         # Warning if buffer is getting full
         if buffer_usage > 0.8:
-            print(f" WARNING: Buffer {buffer_usage*100:.0f}% full ({queue_size}/{MAX_READINGS})")
+            print(f"[{GATEWAY_ID}] WARNING: Buffer {buffer_usage*100:.0f}% full ({queue_size}/{MAX_READINGS})")
         
-        print(f"Attempting to send {len(batch)} readings to cloud...")
+        #print(f"[{GATEWAY_ID}] Attempting to send {len(batch)} readings to cloud...")
             
         try:
             payload = {
-                "gateway_id": "gateway_1",
+                "gateway_id": GATEWAY_ID,
                 "timestamp": time.time(),
                 "readings": batch
             }
@@ -89,18 +90,18 @@ def send_to_cloud():
             )
             
             if response.status_code == 200:
-                print(f"Successfully sent {len(batch)} readings to cloud")
+                print(f"[{GATEWAY_ID}] Successfully sent {len(batch)} readings to cloud")
                 with send_lock:
                     for _ in range(min(len(batch), len(readings))):
                         readings.popleft()
                 last_send_time = time.time()
             else:
-                print(f"Failed to send data. Status: {response.status_code}, Response: {response.text}")
+                print(f"[{GATEWAY_ID}] Failed to send data. Status: {response.status_code}")
                 
         except requests.exceptions.RequestException as e:
-            print(f"Error sending data to cloud: {e}")
+            print(f"[{GATEWAY_ID}] Error sending data to cloud: {e}")
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            print(f"[{GATEWAY_ID}] Unexpected error: {e}")
 
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -108,12 +109,12 @@ client.on_connect = on_connect
 client.on_message = on_message
 client.on_disconnect = on_disconnect
 
-print("Gateway starting...")
+print(f"[{GATEWAY_ID}] Starting...")
 
 # Start cloud sender thread
 cloud_thread = threading.Thread(target=send_to_cloud, daemon=True)
 cloud_thread.start()
-print(f"Cloud sender thread started. Sending every {SEND_INTERVAL}s to {CLOUD_ENDPOINT}")
+print(f"[{GATEWAY_ID}] Cloud sender started. Sending every {SEND_INTERVAL}s to {CLOUD_ENDPOINT}")
 
 client.connect(BROKER, 1883, 60)
 client.loop_forever()
