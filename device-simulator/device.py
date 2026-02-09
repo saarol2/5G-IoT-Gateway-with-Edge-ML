@@ -10,7 +10,7 @@ connected = False
 def on_connect(client, userdata, flags, rc, properties=None):
     global connected
     connected = True
-    print(f"Device {DEVICE_ID} connected to {BROKER}")
+    print(f"[{DEVICE_ID}] Connected to {BROKER}")
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
@@ -28,6 +28,6 @@ while True:
     }
 
     client.publish(TOPIC, json.dumps(data))
-    print(f"{DEVICE_ID} sent {data['temperature']}°C")
+    print(f"[{DEVICE_ID}] Sent {data['temperature']}°C")
 
     time.sleep(random.uniform(1,5))

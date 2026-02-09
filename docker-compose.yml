@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   mqtt:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:2
     ports:
       - "1883:1883"
     volumes:
@@ -14,6 +12,8 @@ services:
       - ./data:/data
     depends_on:
       - mqtt
+    deploy:
+      replicas: 3
     environment:
       - CLOUD_ENDPOINT=${CLOUD_ENDPOINT:-http://host.docker.internal:7071/api/iot-data}
       - BATCH_SIZE=${BATCH_SIZE:-100}
@@ -21,6 +21,8 @@ services:
 
   device:
     build: ./device-simulator
+    deploy:
+      replicas: 25
     environment:
       - MQTT_BROKER=mqtt
 
