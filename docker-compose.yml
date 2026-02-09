@@ -22,7 +22,7 @@ services:
   device:
     build: ./device-simulator
     deploy:
-      replicas: 25
+      replicas: 100
     environment:
       - MQTT_BROKER=mqtt
 

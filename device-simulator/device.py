@@ -28,6 +28,6 @@ while True:
     }
 
     client.publish(TOPIC, json.dumps(data))
-    print(f"[{DEVICE_ID}] Sent {data['temperature']}°C")
+    #print(f"[{DEVICE_ID}] Sent {data['temperature']}°C")
 
     time.sleep(random.uniform(1,5))

@@ -27,10 +27,10 @@ def on_connect(client, userdata, flags, rc, properties=None):
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
-        print(f"[{GATEWAY_ID}] Received: {data}")
+        #print(f"[{GATEWAY_ID}] Received: {data}")
         with send_lock:
             readings.append(data)
-            print(f"[{GATEWAY_ID}] Stored in memory. Total readings: {len(readings)}")
+            #print(f"[{GATEWAY_ID}] Stored in memory. Total readings: {len(readings)}")
     except Exception as e:
         print(f"[{GATEWAY_ID}] Error processing message: {e}")
 
@@ -73,7 +73,7 @@ def send_to_cloud():
         if buffer_usage > 0.8:
             print(f"[{GATEWAY_ID}] WARNING: Buffer {buffer_usage*100:.0f}% full ({queue_size}/{MAX_READINGS})")
         
-        print(f"[{GATEWAY_ID}] Attempting to send {len(batch)} readings to cloud...")
+        #print(f"[{GATEWAY_ID}] Attempting to send {len(batch)} readings to cloud...")
             
         try:
             payload = {
