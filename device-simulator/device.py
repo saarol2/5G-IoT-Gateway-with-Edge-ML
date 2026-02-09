@@ -10,7 +10,7 @@ connected = False
 def on_connect(client, userdata, flags, rc, properties=None):
     global connected
     connected = True
-    print("Device connected")
+    print(f"Device {DEVICE_ID} connected to {BROKER}")
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
