@@ -41,8 +41,8 @@ scaler = joblib.load(SCALER_PATH)
 logging.info('Model loaded.')
 
 device_buffers = {}
-
-@app.route(route="iot-data", auth_level=func.AuthLevel.FUNCTION)
+# changed to AONONYMOUS from FUNCTION for testing
+@app.route(route="iot-data", auth_level=func.AuthLevel.ANONYMOUS)
 def iot_data(req: func.HttpRequest) -> func.HttpResponse:
     """
     Azure Function to receive IoT data from gateway via REST API,
@@ -94,7 +94,7 @@ def iot_data(req: func.HttpRequest) -> func.HttpResponse:
                     prob = torch.sigmoid(output).item()
 
                 predictions.append({
-                    device_id: device_id,
+                    "device_id": device_id,
                     "probability": prob,
                     "anomaly": prob > THRESHOLD
                 })

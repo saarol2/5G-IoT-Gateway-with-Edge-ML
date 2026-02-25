@@ -24,7 +24,7 @@ client.loop_start()
 while not connected:
     time.sleep(0.1)
 
-index = 0
+index = random.randint(0, len(df)-1)
 while True:
     row = df.iloc[index % len(df)]
 

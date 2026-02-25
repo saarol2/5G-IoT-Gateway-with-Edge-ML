@@ -4,6 +4,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import make_pipeline
 
+"""
+DATASET TO DOWNLOAD: https://www.kaggle.com/datasets/nphantawee/pump-sensor-data
+"""
 
 df = pd.read_csv("data/sensor.csv")
 

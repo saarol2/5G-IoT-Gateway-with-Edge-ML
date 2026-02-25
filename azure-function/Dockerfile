@@ -1,10 +1,9 @@
-FROM python:3.11
+FROM mcr.microsoft.com/azure-functions/python:4-python3.10
 
-WORKDIR /app
+WORKDIR /home/site/wwwroot
 
-COPY azure-function/function_app.py .
-COPY azure-function/requirements.txt .
-COPY /machine-learning/models ./machine-learning/models
+COPY azure-function/ .
 
-RUN pip install --upgrade pip
+COPY machine-learning/models ./machine-learning/models
+
 RUN pip install -r requirements.txt
