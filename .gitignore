@@ -41,9 +41,9 @@ ENV/
 
 # Docker
 *.log
-
-# Data
 data/
+# Data
+
 *.db
 *.sqlite
 *.sqlite3

@@ -12,17 +12,31 @@ services:
       - ./data:/data
     depends_on:
       - mqtt
+      - azure-function
     deploy:
       replicas: 3
     environment:
-      - CLOUD_ENDPOINT=${CLOUD_ENDPOINT:-http://host.docker.internal:7071/api/iot-data}
+      #- CLOUD_ENDPOINT=${CLOUD_ENDPOINT:-http://host.docker.internal:7071/api/iot-data}
+      - CLOUD_ENDPOINT=${CLOUD_ENDPOINT:-http://azure-function/api/iot-data}
       - BATCH_SIZE=${BATCH_SIZE:-100}
       - SEND_INTERVAL=${SEND_INTERVAL:-5}
 
   device:
-    build: ./device-simulator
+    build:
+      context: .
+      dockerfile: device-simulator/Dockerfile
     deploy:
       replicas: 100
     environment:
       - MQTT_BROKER=mqtt
+
+  azure-function:
+      build:
+        context: .
+        dockerfile: azure-function/Dockerfile
+      container_name: azure-function
+      ports:
+        - "7071:80"
+      depends_on:
+        - mqtt
 
