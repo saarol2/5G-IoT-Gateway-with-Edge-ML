@@ -16,17 +16,12 @@ services:
       - MQTT_BROKER=mqtt
       - MQTT_TOPIC=sensors/temperature
 
-  edge-ml:
-    build: ./services/edge-ml
-
   gateway:
     build: ./gateway
     depends_on:
       - mqtt
-      - edge-ml
     environment:
       - MQTT_BROKER=mqtt
-      - EDGE_ML_ENDPOINT=http://edge-ml:8000/predict
       - CLOUD_ENDPOINT=
     deploy:
       replicas: 3
@@ -41,3 +36,11 @@ services:
       - MIDDLEWARE_URL=http://middleware:8080
     deploy:
       replicas: 100
+
+  ml-trainer:
+    build: ./machine-learning
+    profiles:
+      - training
+    volumes:
+      - ./machine-learning/data:/app/data
+      - ./machine-learning/models:/app/models

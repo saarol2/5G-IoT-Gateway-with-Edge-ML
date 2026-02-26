@@ -10,4 +10,3 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
 SEND_INTERVAL = int(os.getenv("SEND_INTERVAL", "5"))
 
 CLOUD_ENDPOINT = os.getenv("CLOUD_ENDPOINT", "http://azure-function/api/iot-data")
-EDGE_ML_ENDPOINT = os.getenv("EDGE_ML_ENDPOINT", "http://edge-ml:8000/predict")

@@ -2,7 +2,7 @@ import threading
 from .config import (
     BROKER, SHARED_TOPIC,
     GATEWAY_ID, MAX_READINGS,
-    CLOUD_ENDPOINT, EDGE_ML_ENDPOINT,
+    CLOUD_ENDPOINT,
     BATCH_SIZE, SEND_INTERVAL
 )
 from .buffer import ReadingBuffer
@@ -26,11 +26,11 @@ def main():
     sender_thread = threading.Thread(
         target=run_sender_loop,
         daemon=True,
-        args=(buf, GATEWAY_ID, CLOUD_ENDPOINT, EDGE_ML_ENDPOINT, BATCH_SIZE, SEND_INTERVAL)
+        args=(buf, GATEWAY_ID, CLOUD_ENDPOINT, BATCH_SIZE, SEND_INTERVAL)
     )
     sender_thread.start()
 
-    print(f"[{GATEWAY_ID}] edge={EDGE_ML_ENDPOINT} cloud={CLOUD_ENDPOINT}")
+    print(f"[{GATEWAY_ID}] cloud={CLOUD_ENDPOINT}")
     client.connect(BROKER, 1883, 60)
     client.subscribe(SHARED_TOPIC)
     client.loop_forever()

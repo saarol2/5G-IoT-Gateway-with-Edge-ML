@@ -1,7 +1,6 @@
 import time
 from typing import Any, Dict, List
 from .buffer import ReadingBuffer
-from .edge_client import call_edge_ml
 from .cloud_client import send_to_cloud
 
 def should_send(queue_size: int, buffer_usage: float, time_since: float, batch_size: int, send_interval: int) -> bool:
@@ -15,7 +14,6 @@ def run_sender_loop(
     buf: ReadingBuffer,
     gateway_id: str,
     cloud_endpoint: str,
-    edge_endpoint: str,
     batch_size: int,
     send_interval: int,
 ):
@@ -38,12 +36,10 @@ def run_sender_loop(
         if usage > 0.8:
             print(f"[{gateway_id}] WARNING buffer {usage*100:.0f}% ({qsize}/{buf.maxlen})")
 
-        edge = call_edge_ml(edge_endpoint, gateway_id, batch)
         payload = {
             "gateway_id": gateway_id,
             "timestamp": time.time(),
             "readings": batch,
-            "edge_inference": edge
         }
 
         ok = False
@@ -53,7 +49,7 @@ def run_sender_loop(
             print(f"[{gateway_id}] cloud exception: {e}")
 
         if ok:
-            print(f"[{gateway_id}] sent {len(batch)} readings (edge={edge.get('model_version','n/a')})")
+            print(f"[{gateway_id}] sent {len(batch)} readings")
             buf.drop(len(batch))
             last_send = time.time()
         else:
