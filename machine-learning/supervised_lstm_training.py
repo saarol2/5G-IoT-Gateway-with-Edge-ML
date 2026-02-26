@@ -232,6 +232,7 @@ def train_and_test(csv_path, epochs=20, batch_size=64, lr=1e-3, seq_length=600, 
     
     best_weighted_f1 = 0
     best_threshold = 0.5
+    best_real_f1 = 0.0 
     
     for threshold in np.arange(0.05, 1.0, 0.01):
         y_pred = (all_probs > threshold).astype(int)

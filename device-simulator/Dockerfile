@@ -8,6 +8,6 @@ COPY device-simulator/device.py .
 COPY machine-learning/data/sensor_pca_cleaned.csv ./data.csv
 
 RUN pip install paho-mqtt
-RUN pip install pandas
+RUN pip install --no-cache-dir requests pandas
 
 CMD ["python", "device.py"]

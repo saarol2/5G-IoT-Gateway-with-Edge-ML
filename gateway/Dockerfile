@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY gateway.py .
-RUN pip install paho-mqtt requests
+COPY app ./app
+RUN pip install --no-cache-dir paho-mqtt requests
 
-CMD ["python", "gateway.py"]
+CMD ["python", "-m", "app.main"]
