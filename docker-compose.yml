@@ -16,13 +16,24 @@ services:
       - MQTT_BROKER=mqtt
       - MQTT_TOPIC=sensors/temperature
 
+  azure-function:
+    build:
+      context: .
+      dockerfile: ./azure-function/Dockerfile
+    ports:
+      - "7071:80"
+    environment:
+      - AzureWebJobsStorage=UseDevelopmentStorage=true
+      - FUNCTIONS_WORKER_RUNTIME=python
+
   gateway:
     build: ./gateway
     depends_on:
       - mqtt
+      - azure-function
     environment:
       - MQTT_BROKER=mqtt
-      - CLOUD_ENDPOINT=
+      - CLOUD_ENDPOINT=http://azure-function:80/api/iot-data
     deploy:
       replicas: 3
 
