@@ -1,7 +1,7 @@
 azure-functions
 numpy
-scikit-learn
+scikit-learn==1.5.2
 joblib
-torch
+# torch is installed separately in Dockerfile using CPU-only index to avoid ~1.5 GB CUDA download
 flask
 flask-sqlalchemy

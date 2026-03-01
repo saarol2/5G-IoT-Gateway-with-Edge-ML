@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from .database import db
+from database import db
 
 class Gateway(db.Model):
     __tablename__ = "gateways"

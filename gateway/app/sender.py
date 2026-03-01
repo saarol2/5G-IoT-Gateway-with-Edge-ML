@@ -21,12 +21,18 @@ class LSTMClassifier(nn.Module):
         out = self.fc(out)
         return out
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = LSTMClassifier(input_size=2, hidden_size=64, num_layers=2)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-model.to(device)
-model.eval()
-scaler = joblib.load(SCALER_PATH)
+print("[sender] loading model...")
+try:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = LSTMClassifier(input_size=2, hidden_size=64, num_layers=2)
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+    model.to(device)
+    model.eval()
+    scaler = joblib.load(SCALER_PATH)
+    print(f"[sender] model loaded on {device}")
+except Exception as e:
+    print(f"[sender] FATAL: failed to load model: {e}")
+    raise
 
 device_buffers = {}
 
@@ -64,6 +70,7 @@ def run_sender_loop(
             print(f"[{gateway_id}] WARNING buffer {usage*100:.0f}% ({qsize}/{buf.maxlen})")
 
         predictions = []
+        devices_seen = set()
         for reading in batch:
             device_id = reading.get("device_id")
             pc1 = reading.get("pc1")
@@ -77,6 +84,7 @@ def run_sender_loop(
                 device_buffers[device_id] = deque(maxlen=SEQ_LENGTH)
 
             device_buffers[device_id].append([pc1, pc2, timestamp])
+            devices_seen.add(device_id)
 
             if len(device_buffers[device_id]) == SEQ_LENGTH:
                 sequence_data = list(device_buffers[device_id])
@@ -93,12 +101,21 @@ def run_sender_loop(
 
                 reading["anomaly_prob"] = prob
                 reading["anomaly"] = prob > THRESHOLD
+                anomaly = prob > THRESHOLD
                 predictions.append({
                     "device_id": device_id,
                     "probability": prob,
-                    "anomaly": prob > THRESHOLD,
+                    "anomaly": anomaly,
                     "inference_timestamp": last_timestamp
                 })
+                label = "ANOMALY" if anomaly else "normal"
+                print(f"[{gateway_id}] edge predict {device_id}: {prob:.4f} → {label}")
+
+        # buffer fill status
+        if device_buffers:
+            fills = [len(q) for q in device_buffers.values()]
+            ready = sum(1 for f in fills if f >= SEQ_LENGTH)
+            print(f"[{gateway_id}] buffers: {len(fills)} devices, {ready}/{len(fills)} ready, min={min(fills)} max={max(fills)} (need {SEQ_LENGTH})")
 
         payload = {
             "gateway_id": gateway_id,
@@ -108,15 +125,16 @@ def run_sender_loop(
         }
 
         ok = False
+        err = ""
         try:
-            ok = send_to_cloud(cloud_endpoint, payload)
+            ok, err = send_to_cloud(cloud_endpoint, payload)
         except Exception as e:
-            print(f"[{gateway_id}] cloud exception: {e}")
+            err = str(e)
 
         if ok:
             print(f"[{gateway_id}] sent {len(batch)} readings")
             buf.drop(len(batch))
             last_send = time.time()
         else:
-            print(f"[{gateway_id}] cloud send failed")
+            print(f"[{gateway_id}] cloud send failed: {err}")
             time.sleep(1.0)

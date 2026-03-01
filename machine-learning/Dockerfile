@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir \
     && pip install --no-cache-dir \
     pandas \
     numpy \
-    scikit-learn \
+    scikit-learn==1.5.2 \
     matplotlib \
     joblib
 

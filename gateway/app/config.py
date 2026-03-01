@@ -1,7 +1,7 @@
 import os
 
 BROKER = os.getenv("MQTT_BROKER", "mqtt")
-SHARED_TOPIC = os.getenv("MQTT_TOPIC", "$share/gateways/sensors/temperature")
+SHARED_TOPIC = os.getenv("MQTT_TOPIC", "$share/gateways/sensors/waterpump")
 
 GATEWAY_ID = os.getenv("HOSTNAME", "gateway")
 MAX_READINGS = int(os.getenv("MAX_READINGS", "500"))

@@ -8,8 +8,8 @@ import numpy as np
 from collections import deque
 import joblib
 from flask import Flask
-from .database import db
-from .models import Gateway, Device, Reading, Prediction
+from database import db
+from models import Gateway, Device, Reading, Prediction
 
 flask_app = Flask(__name__)
 flask_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////app/data/iot.db"

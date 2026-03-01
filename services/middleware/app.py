@@ -6,7 +6,7 @@ import paho.mqtt.client as mqtt
 app = FastAPI(title="Middleware Layer")
 
 BROKER = os.getenv("MQTT_BROKER", "mqtt")
-TOPIC = os.getenv("MQTT_TOPIC", "sensors/temperature")
+TOPIC = os.getenv("MQTT_TOPIC", "sensors/waterpump")
 
 DEVICE_KEYS: dict[str, str] = {}
 
