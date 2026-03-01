@@ -25,9 +25,13 @@ services:
     environment:
       - AzureWebJobsStorage=UseDevelopmentStorage=true
       - FUNCTIONS_WORKER_RUNTIME=python
+    volumes:
+      - ./azure-function/data:/app/data
 
   gateway:
-    build: ./gateway
+    build:
+      context: .
+      dockerfile: ./gateway/Dockerfile
     depends_on:
       - mqtt
       - azure-function

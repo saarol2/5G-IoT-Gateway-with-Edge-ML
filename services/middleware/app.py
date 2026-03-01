@@ -48,7 +48,7 @@ def ingest(body: Ingest, x_api_key: str = Header(default="")):
     }
 
     # centralized logging here
-    print(json.dumps({"event":"ingest_ok","device_id":body.device_id,"ts":time.time()}))
+    #print(json.dumps({"event":"ingest_ok","device_id":body.device_id,"ts":time.time()}))
 
     mqttc.publish(TOPIC, json.dumps(msg))
     return {"status": "published", "topic": TOPIC}

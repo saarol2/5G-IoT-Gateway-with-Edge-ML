@@ -38,6 +38,7 @@ class SensorDataset(Dataset):
         X, y = [], []
 
         # Taking in x amount and predicting if the status switches in the next 100
+        #future_window = 10
         future_window = 120
         max_index = len(self.sensor) - self.seq_length - future_window
 
