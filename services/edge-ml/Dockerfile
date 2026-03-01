@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir \
 COPY machine-learning/models ./machine-learning/models
 COPY services/edge-ml/app.py .
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "warning"]

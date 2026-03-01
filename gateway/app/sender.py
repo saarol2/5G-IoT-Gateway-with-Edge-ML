@@ -4,6 +4,7 @@ from .buffer import ReadingBuffer
 from .cloud_client import send_to_cloud
 from .edge_ml_client import process_reading, buffer_stats
 from .config import SEQ_LENGTH, EDGE_ML_ENDPOINT
+from .metrics import GatewayMetrics
 
 def should_send(queue_size: int, buffer_usage: float, time_since: float, batch_size: int, send_interval: int) -> bool:
     return (
@@ -20,11 +21,22 @@ def run_sender_loop(
     send_interval: int,
 ):
     last_send = time.time()
+    metrics = GatewayMetrics(gateway_id, report_interval=10, warmup_duration=60)
+    
+    print(f"[{gateway_id}] Metrics collection starting with 60s warmup period")
+    print(f"[{gateway_id}] Reports will be printed every 10s after warmup")
 
     while True:
         now = time.time()
         qsize = buf.size()
         usage = buf.usage()
+        
+        # Record buffer usage
+        metrics.record_buffer_usage(usage)
+        
+        # Print metrics report periodically
+        if metrics.should_report():
+            metrics.print_report()
 
         if not should_send(qsize, usage, now - last_send, batch_size, send_interval):
             time.sleep(0.5)
@@ -37,7 +49,8 @@ def run_sender_loop(
 
         if usage > 0.8:
             print(f"[{gateway_id}] WARNING buffer {usage*100:.0f}% ({qsize}/{buf.maxlen})")
-
+        
+        batch_start = time.time()
         predictions = []
         for reading in batch:
             device_id = reading.get("device_id")
@@ -59,6 +72,10 @@ def run_sender_loop(
                     "anomaly": anomaly,
                     "inference_timestamp": timestamp,
                 })
+                
+                # Record prediction metrics
+                metrics.record_prediction(anomaly)
+                
                 label = "ANOMALY" if anomaly else "normal"
                 print(f"[{gateway_id}] edge predict {device_id}: {prob:.4f} → {label}")
 
@@ -72,6 +89,12 @@ def run_sender_loop(
             "readings": batch,
             "predictions": predictions
         }
+        
+        # Record latencies
+        cloud_timestamp = time.time()
+        for reading in batch:
+            if "timestamp" in reading:
+                metrics.record_latency(reading["timestamp"], cloud_timestamp)
 
         ok = False
         err = ""
@@ -80,10 +103,14 @@ def run_sender_loop(
         except Exception as e:
             err = str(e)
 
+        batch_processing_time = time.time() - batch_start
+
         if ok:
-            print(f"[{gateway_id}] sent {len(batch)} readings")
+            print(f"[{gateway_id}] sent {len(batch)} readings (processing: {batch_processing_time*1000:.1f}ms)")
+            metrics.record_batch_sent(len(batch), batch_processing_time)
             buf.drop(len(batch))
             last_send = time.time()
         else:
             print(f"[{gateway_id}] cloud send failed: {err}")
+            metrics.record_batch_failed(len(batch))
             time.sleep(1.0)

@@ -47,7 +47,7 @@ services:
       - CLOUD_ENDPOINT=http://azure-function:80/api/iot-data
       - EDGE_ML_ENDPOINT=http://edge-ml:8000
     deploy:
-      replicas: 3
+      replicas: 1
 
   device:
     build:
@@ -58,7 +58,7 @@ services:
     environment:
       - MIDDLEWARE_URL=http://middleware:8080
     deploy:
-      replicas: 100
+      replicas: 250
 
   ml-trainer:
     build: ./machine-learning
