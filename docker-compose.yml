@@ -11,7 +11,7 @@ services:
     depends_on:
       - mqtt
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       - MQTT_BROKER=mqtt
       - MQTT_TOPIC=sensors/waterpump
@@ -27,21 +27,36 @@ services:
       - FUNCTIONS_WORKER_RUNTIME=python
     volumes:
       - ./azure-function/data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:80').read()"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
   edge-ml:
     build:
       context: .
       dockerfile: ./services/edge-ml/Dockerfile
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
 
   gateway:
     build:
       context: .
       dockerfile: ./gateway/Dockerfile
     depends_on:
-      - mqtt
-      - azure-function
-      - edge-ml
+      mqtt:
+        condition: service_started
+      azure-function:
+        condition: service_healthy
+      edge-ml:
+        condition: service_healthy
     environment:
       - MQTT_BROKER=mqtt
       - CLOUD_ENDPOINT=http://azure-function:80/api/iot-data
