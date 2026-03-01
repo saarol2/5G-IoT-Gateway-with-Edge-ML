@@ -10,8 +10,6 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
 SEND_INTERVAL = int(os.getenv("SEND_INTERVAL", "5"))
 
 CLOUD_ENDPOINT = os.getenv("CLOUD_ENDPOINT", "http://azure-function/api/iot-data")
+EDGE_ML_ENDPOINT = os.getenv("EDGE_ML_ENDPOINT", "http://edge-ml:8000")
 
-MODEL_PATH = "machine-learning/models/50_window_lstm_model.pt"
-SCALER_PATH = "machine-learning/models/scaler.pkl"
-THRESHOLD = 0.21
-SEQ_LENGTH = 50
+SEQ_LENGTH = int(os.getenv("SEQ_LENGTH", "50"))

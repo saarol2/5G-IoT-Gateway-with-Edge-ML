@@ -27,6 +27,13 @@ services:
       - FUNCTIONS_WORKER_RUNTIME=python
     volumes:
       - ./azure-function/data:/app/data
+  edge-ml:
+    build:
+      context: .
+      dockerfile: ./services/edge-ml/Dockerfile
+    ports:
+      - "8000:8000"
+
   gateway:
     build:
       context: .
@@ -34,9 +41,11 @@ services:
     depends_on:
       - mqtt
       - azure-function
+      - edge-ml
     environment:
       - MQTT_BROKER=mqtt
       - CLOUD_ENDPOINT=http://azure-function:80/api/iot-data
+      - EDGE_ML_ENDPOINT=http://edge-ml:8000
     deploy:
       replicas: 3
 
